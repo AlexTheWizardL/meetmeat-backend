@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "hexcolor",
+    "nestjs",
+    "typeorm",
+    "jsonb",
+    "postgres",
+    "postgresql",
+    "anthropic",
+    "openai",
+    "skia",
+    "presigner",
+    "gcs",
+    "Javits",
+    "Moscone",
+    "linkedin",
+    "instagram",
+    "Timestampable",
+    "Softdeletable",
+    "autoload",
+    "Dto",
+    "dtos",
+    "Dtos"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "package-lock.json",
+    "*.log"
+  ]
+}
