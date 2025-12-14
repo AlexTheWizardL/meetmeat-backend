@@ -7,6 +7,7 @@ import type {
 } from '../ai.interface';
 import { eventParsingTemplate, templateGenerationTemplate } from '../templates';
 import { MockDataGenerator } from '../mock';
+import { withRetry } from '../../../common/utils/retry';
 
 interface AnthropicResponse {
   content: { text: string }[];
@@ -66,28 +67,38 @@ export class AnthropicProvider implements AiProviderInterface {
   }
 
   private async callAnthropic(prompt: string): Promise<string> {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': this.apiVersion,
+    return withRetry(
+      async () => {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.apiKey,
+            'anthropic-version': this.apiVersion,
+          },
+          body: JSON.stringify({
+            model: this.model,
+            max_tokens: this.maxTokens,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(
+            `Anthropic API error: ${String(response.status)} - ${error}`,
+          );
+        }
+
+        const data = (await response.json()) as AnthropicResponse;
+        return data.content[0].text;
       },
-      body: JSON.stringify({
-        model: this.model,
-        max_tokens: this.maxTokens,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(
-        `Anthropic API error: ${String(response.status)} - ${error}`,
-      );
-    }
-
-    const data = (await response.json()) as AnthropicResponse;
-    return data.content[0].text;
+      {
+        maxRetries: 3,
+        initialDelayMs: 1000,
+        logger: this.logger,
+        context: 'Anthropic API',
+      },
+    );
   }
 }

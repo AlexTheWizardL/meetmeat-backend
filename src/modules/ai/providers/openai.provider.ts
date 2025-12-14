@@ -7,6 +7,7 @@ import type {
 } from '../ai.interface';
 import { eventParsingTemplate, templateGenerationTemplate } from '../templates';
 import { MockDataGenerator } from '../mock';
+import { withRetry } from '../../../common/utils/retry';
 
 interface OpenAiResponse {
   choices: { message: { content: string } }[];
@@ -63,30 +64,43 @@ export class OpenAiProvider implements AiProviderInterface {
     prompt: string,
     responseFormat: 'json_object' | 'text' = 'text',
   ): Promise<string> {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
+    return withRetry(
+      async () => {
+        const response = await fetch(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({
+              model: this.model,
+              messages: [{ role: 'user', content: prompt }],
+              response_format:
+                responseFormat === 'json_object'
+                  ? { type: 'json_object' }
+                  : undefined,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(
+            `OpenAI API error: ${String(response.status)} - ${error}`,
+          );
+        }
+
+        const data = (await response.json()) as OpenAiResponse;
+        return data.choices[0].message.content;
       },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        response_format:
-          responseFormat === 'json_object'
-            ? { type: 'json_object' }
-            : undefined,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(
-        `OpenAI API error: ${String(response.status)} - ${error}`,
-      );
-    }
-
-    const data = (await response.json()) as OpenAiResponse;
-    return data.choices[0].message.content;
+      {
+        maxRetries: 3,
+        initialDelayMs: 1000,
+        logger: this.logger,
+        context: 'OpenAI API',
+      },
+    );
   }
 }
