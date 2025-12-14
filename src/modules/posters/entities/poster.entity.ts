@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Profile } from '../../profiles/entities/profile.entity';
 import { Event } from '../../events/entities/event.entity';
@@ -22,13 +22,17 @@ export interface PosterExport {
 }
 
 @Entity('posters')
+@Index(['profileId', 'status']) // Composite index for user poster listing
 export class Poster extends BaseEntity {
+  @Index()
   @Column({ type: 'uuid' })
   profileId: string;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
   eventId?: string;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
   templateId?: string;
 
@@ -63,6 +67,7 @@ export class Poster extends BaseEntity {
   @Column({ type: 'jsonb', default: () => "'[]'" })
   exports: PosterExport[];
 
+  @Index()
   @Column({ type: 'varchar', length: 50, default: 'draft' })
   status: PosterStatus;
 

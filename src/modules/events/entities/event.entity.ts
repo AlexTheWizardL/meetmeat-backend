@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 export interface EventLocation {
@@ -15,15 +15,18 @@ export interface BrandColors {
 
 @Entity('events')
 export class Event extends BaseEntity {
+  @Index({ unique: true })
   @Column({ type: 'text', unique: true })
   sourceUrl: string;
 
+  @Index()
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  @Index()
   @Column({ type: 'date', nullable: true })
   startDate?: Date;
 

@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 export interface SocialLink {
@@ -23,10 +23,7 @@ export class Profile extends BaseEntity {
   @Column({ type: 'jsonb', default: () => "'[]'" })
   socialLinks: SocialLink[];
 
+  @Index()
   @Column({ type: 'boolean', default: false })
   isDefault: boolean;
-
-  // Relation will be added when Poster entity is created
-  // @OneToMany(() => Poster, (poster) => poster.profile)
-  // posters: Poster[];
 }

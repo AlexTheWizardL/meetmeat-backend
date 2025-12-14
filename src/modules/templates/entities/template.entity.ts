@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 export interface TemplateElement {
@@ -24,6 +24,7 @@ export interface TemplateDesign {
 }
 
 @Entity('templates')
+@Index(['eventId', 'status']) // Composite index for common query pattern
 export class Template extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string;
@@ -34,12 +35,15 @@ export class Template extends BaseEntity {
   @Column({ type: 'jsonb' })
   design: TemplateDesign;
 
+  @Index()
   @Column({ type: 'varchar', length: 50, default: 'active' })
   status: 'active' | 'archived';
 
+  @Index()
   @Column({ type: 'integer', default: 0 })
   usageCount: number;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
   eventId?: string;
 }
