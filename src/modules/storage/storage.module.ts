@@ -13,6 +13,7 @@ import { StorageService } from './storage.service';
  */
 @Global()
 @Module({})
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StorageModule {
   static forRoot(): DynamicModule {
     return {

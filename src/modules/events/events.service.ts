@@ -30,10 +30,14 @@ export class EventsService {
       sourceUrl: url,
       name: parsedData.name,
       description: parsedData.description,
-      startDate: parsedData.startDate
-        ? new Date(parsedData.startDate)
-        : undefined,
-      endDate: parsedData.endDate ? new Date(parsedData.endDate) : undefined,
+      startDate:
+        parsedData.startDate !== undefined && parsedData.startDate !== ''
+          ? new Date(parsedData.startDate)
+          : undefined,
+      endDate:
+        parsedData.endDate !== undefined && parsedData.endDate !== ''
+          ? new Date(parsedData.endDate)
+          : undefined,
       location: parsedData.location,
       brandColors: parsedData.brandColors,
       logoUrl: parsedData.logoUrl,

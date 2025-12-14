@@ -10,4 +10,5 @@ import { PostersController } from './posters.controller';
   providers: [PostersService],
   exports: [PostersService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PostersModule {}

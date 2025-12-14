@@ -16,7 +16,7 @@ export class LocalStorageProvider implements StorageProviderInterface {
 
   constructor(private readonly configService: ConfigService) {
     this.basePath =
-      this.configService.get<string>('storage.local.path') || './uploads';
+      this.configService.get<string>('storage.local.path') ?? './uploads';
     void this.ensureDirectory();
   }
 
@@ -29,10 +29,10 @@ export class LocalStorageProvider implements StorageProviderInterface {
   }
 
   async upload(buffer: Buffer, options: UploadOptions): Promise<UploadedFile> {
-    const folder = options.folder || '';
-    const extension = this.getExtension(options.mimeType || '');
-    const filename = options.filename || `${uuid()}${extension}`;
-    const key = folder ? `${folder}/${filename}` : filename;
+    const folder = options.folder ?? '';
+    const extension = this.getExtension(options.mimeType ?? '');
+    const filename = options.filename ?? `${uuid()}${extension}`;
+    const key = folder !== '' ? `${folder}/${filename}` : filename;
     const fullPath = path.join(this.basePath, key);
 
     // Ensure folder exists
@@ -48,7 +48,7 @@ export class LocalStorageProvider implements StorageProviderInterface {
       url: `/uploads/${key}`,
       key,
       size: buffer.length,
-      mimeType: options.mimeType || 'application/octet-stream',
+      mimeType: options.mimeType ?? 'application/octet-stream',
     };
   }
 

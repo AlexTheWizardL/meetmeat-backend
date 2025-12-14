@@ -19,9 +19,9 @@ export class OpenAiProvider implements AiProviderInterface {
   private readonly model: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('ai.openai.apiKey') || '';
+    this.apiKey = this.configService.get<string>('ai.openai.apiKey') ?? '';
     this.model =
-      this.configService.get<string>('ai.openai.model') ||
+      this.configService.get<string>('ai.openai.model') ??
       'gpt-4-turbo-preview';
   }
 
@@ -44,7 +44,7 @@ export class OpenAiProvider implements AiProviderInterface {
     count = 3,
   ): Promise<GeneratedTemplate[]> {
     this.logger.log(
-      `Generating ${count} templates for event: ${eventData.name}`,
+      `Generating ${String(count)} templates for event: ${eventData.name}`,
     );
 
     if (!this.apiKey) {
@@ -81,7 +81,9 @@ export class OpenAiProvider implements AiProviderInterface {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+      throw new Error(
+        `OpenAI API error: ${String(response.status)} - ${error}`,
+      );
     }
 
     const data = (await response.json()) as OpenAiResponse;

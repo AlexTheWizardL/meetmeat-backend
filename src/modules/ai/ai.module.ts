@@ -15,6 +15,7 @@ import { AiService } from './ai.service';
  */
 @Global()
 @Module({})
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AiModule {
   static forRoot(): DynamicModule {
     return {

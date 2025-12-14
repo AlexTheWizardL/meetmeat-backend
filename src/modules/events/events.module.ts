@@ -10,4 +10,5 @@ import { EventsController } from './events.controller';
   providers: [EventsService],
   exports: [EventsService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class EventsModule {}

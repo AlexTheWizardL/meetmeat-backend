@@ -40,4 +40,7 @@ export class CreateProfileDto {
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
   socialLinks?: SocialLinkDto[];
+
+  @IsOptional()
+  isDefault?: boolean;
 }

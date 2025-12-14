@@ -23,33 +23,33 @@ export class S3StorageProvider implements StorageProviderInterface {
   private readonly s3Client: S3Client;
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>('storage.s3.bucket') || '';
+    this.bucket = this.configService.get<string>('storage.s3.bucket') ?? '';
     this.region =
-      this.configService.get<string>('storage.s3.region') || 'us-east-1';
+      this.configService.get<string>('storage.s3.region') ?? 'us-east-1';
 
     this.s3Client = new S3Client({
       region: this.region,
       credentials: {
         accessKeyId:
-          this.configService.get<string>('storage.s3.accessKeyId') || '',
+          this.configService.get<string>('storage.s3.accessKeyId') ?? '',
         secretAccessKey:
-          this.configService.get<string>('storage.s3.secretAccessKey') || '',
+          this.configService.get<string>('storage.s3.secretAccessKey') ?? '',
       },
     });
   }
 
   async upload(buffer: Buffer, options: UploadOptions): Promise<UploadedFile> {
-    const folder = options.folder || '';
-    const extension = this.getExtension(options.mimeType || '');
-    const filename = options.filename || `${uuid()}${extension}`;
-    const key = folder ? `${folder}/${filename}` : filename;
+    const folder = options.folder ?? '';
+    const extension = this.getExtension(options.mimeType ?? '');
+    const filename = options.filename ?? `${uuid()}${extension}`;
+    const key = folder !== '' ? `${folder}/${filename}` : filename;
 
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
       Body: buffer,
       ContentType: options.mimeType,
-      ACL: options.public ? 'public-read' : 'private',
+      ACL: options.public === true ? 'public-read' : 'private',
     });
 
     await this.s3Client.send(command);
@@ -61,7 +61,7 @@ export class S3StorageProvider implements StorageProviderInterface {
       key,
       bucket: this.bucket,
       size: buffer.length,
-      mimeType: options.mimeType || 'application/octet-stream',
+      mimeType: options.mimeType ?? 'application/octet-stream',
     };
   }
 

@@ -13,10 +13,13 @@ export class ProfilesService {
   ) {}
 
   async create(createProfileDto: CreateProfileDto): Promise<Profile> {
-    const profile = this.profileRepository.create({
-      ...createProfileDto,
-      socialLinks: createProfileDto.socialLinks || [],
-    });
+    const profile = this.profileRepository.create();
+    profile.name = createProfileDto.name;
+    profile.title = createProfileDto.title;
+    profile.company = createProfileDto.company;
+    profile.avatarUrl = createProfileDto.avatarUrl;
+    profile.socialLinks = createProfileDto.socialLinks ?? [];
+    profile.isDefault = createProfileDto.isDefault ?? false;
     return this.profileRepository.save(profile);
   }
 

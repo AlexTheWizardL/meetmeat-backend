@@ -21,7 +21,7 @@ export class TemplateGenerationTemplate extends JsonPromptTemplate<
   readonly description = 'Generates poster templates based on event data';
 
   build(input: TemplateGenerationInput): string {
-    const layouts = input.layouts || ['classic', 'modern', 'minimal', 'bold'];
+    const layouts = input.layouts ?? ['classic', 'modern', 'minimal', 'bold'];
 
     const schemaExample = `{
   "templates": [
@@ -50,13 +50,13 @@ export class TemplateGenerationTemplate extends JsonPromptTemplate<
 }`;
 
     return `
-You are a poster template designer. Create ${input.count} different "I'm attending" poster templates.
+You are a poster template designer. Create ${String(input.count)} different "I'm attending" poster templates.
 
 Event Details:
 ${JSON.stringify(input.eventData, null, 2)}
 
 Requirements:
-- Create ${input.count} unique templates with different layouts: ${layouts.join(', ')}
+- Create ${String(input.count)} unique templates with different layouts: ${layouts.join(', ')}
 - Each template must include:
   * Event name text element
   * Event date (if available)

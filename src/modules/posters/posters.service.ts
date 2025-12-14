@@ -27,18 +27,20 @@ export class PostersService {
   ) {}
 
   async create(createPosterDto: CreatePosterDto): Promise<Poster> {
-    const poster = this.posterRepository.create({
-      ...createPosterDto,
-      customizations: createPosterDto.customizations || {},
-      exports: [],
-      status: 'draft',
-    });
+    const poster = this.posterRepository.create();
+    poster.profileId = createPosterDto.profileId;
+    poster.eventId = createPosterDto.eventId;
+    poster.templateId = createPosterDto.templateId;
+    poster.manualEventName = createPosterDto.manualEventName;
+    poster.customizations = createPosterDto.customizations ?? {};
+    poster.exports = [];
+    poster.status = 'draft';
     return this.posterRepository.save(poster);
   }
 
   async findAll(profileId?: string): Promise<Poster[]> {
     const where: Record<string, unknown> = { deletedAt: IsNull() };
-    if (profileId) {
+    if (profileId !== undefined && profileId !== '') {
       where.profileId = profileId;
     }
 
@@ -83,7 +85,7 @@ export class PostersService {
     // Upload to storage
     const uploadResult = await this.storageProvider.upload(imageBuffer, {
       folder: `posters/${poster.id}/exports`,
-      filename: `${platform}-${Date.now()}.png`,
+      filename: `${platform}-${String(Date.now())}.png`,
       mimeType: 'image/png',
       public: true,
     });
@@ -123,11 +125,16 @@ export class PostersService {
   ): Buffer {
     // Placeholder - actual implementation would render the poster
     // using canvas/skia based on template and customizations
+    const bgColor =
+      ((poster.customizations as Record<string, unknown>).backgroundColor as
+        | string
+        | undefined) ?? '#6C5CE7';
+    const eventName = poster.manualEventName ?? 'Event Poster';
     const placeholderSvg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}">
-        <rect width="100%" height="100%" fill="${poster.customizations.backgroundColor || '#6C5CE7'}"/>
+      <svg xmlns="http://www.w3.org/2000/svg" width="${String(dimensions.width)}" height="${String(dimensions.height)}">
+        <rect width="100%" height="100%" fill="${bgColor}"/>
         <text x="50%" y="50%" text-anchor="middle" fill="white" font-size="48">
-          ${poster.manualEventName || 'Event Poster'}
+          ${eventName}
         </text>
       </svg>
     `;

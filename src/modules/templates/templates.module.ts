@@ -11,4 +11,5 @@ import { EventsModule } from '../events/events.module';
   providers: [TemplatesService],
   exports: [TemplatesService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TemplatesModule {}

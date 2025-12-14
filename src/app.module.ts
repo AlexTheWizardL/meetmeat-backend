@@ -29,9 +29,12 @@ import { StorageModule } from './modules/storage/storage.module';
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): DataSourceOptions => {
         const dbConfig = configService.get<DataSourceOptions>('database');
-        return dbConfig!;
+        if (!dbConfig) {
+          throw new Error('Database configuration not found');
+        }
+        return dbConfig;
       },
     }),
 
@@ -44,4 +47,5 @@ import { StorageModule } from './modules/storage/storage.module';
     PostersModule,
   ],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class AppModule {}

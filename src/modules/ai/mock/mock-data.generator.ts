@@ -4,6 +4,7 @@ import type { ParsedEventData, GeneratedTemplate } from '../ai.interface';
  * Generates dynamic mock data for development without API keys.
  * All data is derived from input parameters to ensure consistency.
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MockDataGenerator {
   private static readonly COLORS = [
     { primary: '#6C5CE7', secondary: '#A29BFE' },
@@ -80,7 +81,7 @@ export class MockDataGenerator {
     endDate.setDate(endDate.getDate() + (hash % 3) + 1);
 
     return {
-      name: `${eventName} ${year}`,
+      name: `${eventName} ${String(year)}`,
       description: `Join us for ${eventName} - the premier event for professionals`,
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0],
@@ -102,8 +103,8 @@ export class MockDataGenerator {
     count: number,
   ): GeneratedTemplate[] {
     const templates: GeneratedTemplate[] = [];
-    const primaryColor = eventData.brandColors?.primary || '#6C5CE7';
-    const secondaryColor = eventData.brandColors?.secondary || '#A29BFE';
+    const primaryColor = eventData.brandColors?.primary ?? '#6C5CE7';
+    const secondaryColor = eventData.brandColors?.secondary ?? '#A29BFE';
 
     const templateConfigs = [
       {

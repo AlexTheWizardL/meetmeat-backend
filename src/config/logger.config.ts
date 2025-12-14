@@ -33,7 +33,9 @@ const devFormat = winston.format.combine(
   }),
 );
 
-export const createLoggerConfig = () => {
+export const createLoggerConfig = (): ReturnType<
+  typeof WinstonModule.createLogger
+> => {
   return WinstonModule.createLogger({
     level: isProduction ? 'info' : 'debug',
     silent: isTest,
@@ -45,8 +47,8 @@ export const createLoggerConfig = () => {
     // Add metadata to all logs
     defaultMeta: {
       service: 'meetmeat-backend',
-      version: process.env.npm_package_version || '0.0.0',
-      environment: process.env.NODE_ENV || 'development',
+      version: process.env.npm_package_version ?? '0.0.0',
+      environment: process.env.NODE_ENV ?? 'development',
     },
   });
 };

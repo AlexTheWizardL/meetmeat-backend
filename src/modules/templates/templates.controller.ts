@@ -22,7 +22,7 @@ export class TemplatesController {
 
   @Get()
   findAll(@Query('eventId') eventId?: string): Promise<Template[]> {
-    if (eventId) {
+    if (eventId !== undefined && eventId !== '') {
       return this.templatesService.findByEvent(eventId);
     }
     return this.templatesService.findAll();

@@ -10,4 +10,5 @@ import { ProfilesController } from './profiles.controller';
   providers: [ProfilesService],
   exports: [ProfilesService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProfilesModule {}

@@ -21,14 +21,14 @@ export class AnthropicProvider implements AiProviderInterface {
   private readonly maxTokens: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('ai.anthropic.apiKey') || '';
+    this.apiKey = this.configService.get<string>('ai.anthropic.apiKey') ?? '';
     this.model =
-      this.configService.get<string>('ai.anthropic.model') ||
+      this.configService.get<string>('ai.anthropic.model') ??
       'claude-3-opus-20240229';
     this.apiVersion =
-      this.configService.get<string>('ai.anthropic.apiVersion') || '2023-06-01';
+      this.configService.get<string>('ai.anthropic.apiVersion') ?? '2023-06-01';
     this.maxTokens =
-      this.configService.get<number>('ai.anthropic.maxTokens') || 4096;
+      this.configService.get<number>('ai.anthropic.maxTokens') ?? 4096;
   }
 
   async parseEventFromUrl(url: string): Promise<ParsedEventData> {
@@ -50,7 +50,7 @@ export class AnthropicProvider implements AiProviderInterface {
     count = 3,
   ): Promise<GeneratedTemplate[]> {
     this.logger.log(
-      `Generating ${count} templates for event: ${eventData.name}`,
+      `Generating ${String(count)} templates for event: ${eventData.name}`,
     );
 
     if (!this.apiKey) {
@@ -82,7 +82,9 @@ export class AnthropicProvider implements AiProviderInterface {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Anthropic API error: ${response.status} - ${error}`);
+      throw new Error(
+        `Anthropic API error: ${String(response.status)} - ${error}`,
+      );
     }
 
     const data = (await response.json()) as AnthropicResponse;

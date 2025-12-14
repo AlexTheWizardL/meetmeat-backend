@@ -113,9 +113,11 @@ describe('MockDataGenerator', () => {
       // Generate many events and check some are virtual
       const urls = Array.from(
         { length: 20 },
-        (_, i) => `https://example.com/event-${i}`,
+        (_, i) => `https://example.com/event-${String(i)}`,
       );
-      const results = urls.map((url) => MockDataGenerator.generateEventData(url));
+      const results = urls.map((url) =>
+        MockDataGenerator.generateEventData(url),
+      );
       const virtualCount = results.filter((r) => r.location.isVirtual).length;
 
       // Should have some virtual events (approximately 20% based on hash % 5 === 0)
@@ -145,9 +147,15 @@ describe('MockDataGenerator', () => {
     };
 
     it('should generate exact requested number of templates', () => {
-      expect(MockDataGenerator.generateTemplates(mockEventData, 1)).toHaveLength(1);
-      expect(MockDataGenerator.generateTemplates(mockEventData, 2)).toHaveLength(2);
-      expect(MockDataGenerator.generateTemplates(mockEventData, 3)).toHaveLength(3);
+      expect(
+        MockDataGenerator.generateTemplates(mockEventData, 1),
+      ).toHaveLength(1);
+      expect(
+        MockDataGenerator.generateTemplates(mockEventData, 2),
+      ).toHaveLength(2);
+      expect(
+        MockDataGenerator.generateTemplates(mockEventData, 3),
+      ).toHaveLength(3);
     });
 
     it('should cap templates at maximum available layouts', () => {
@@ -205,7 +213,7 @@ describe('MockDataGenerator', () => {
       expect(eventNameElement?.properties.content).toBe(mockEventData.name);
     });
 
-    it('should include I\'m Attending badge in templates', () => {
+    it("should include I'm Attending badge in templates", () => {
       const result = MockDataGenerator.generateTemplates(mockEventData, 1);
       const badgeElement = result[0].elements.find((e) => e.id === 'badge');
 
@@ -215,7 +223,9 @@ describe('MockDataGenerator', () => {
 
     it('should include user photo placeholder', () => {
       const result = MockDataGenerator.generateTemplates(mockEventData, 1);
-      const photoElement = result[0].elements.find((e) => e.id === 'user-photo');
+      const photoElement = result[0].elements.find(
+        (e) => e.id === 'user-photo',
+      );
 
       expect(photoElement).toBeDefined();
       expect(photoElement?.type).toBe('image');
@@ -262,8 +272,9 @@ describe('MockDataGenerator', () => {
         expect(template.backgroundColor).toMatch(/^#[0-9A-Fa-f]{6}$/);
 
         template.elements.forEach((element) => {
-          if (element.properties.fill) {
-            expect(element.properties.fill).toMatch(/^#[0-9A-Fa-f]{6}$/);
+          const fill = element.properties.fill;
+          if (fill !== undefined && fill !== '') {
+            expect(fill).toMatch(/^#[0-9A-Fa-f]{6}$/);
           }
         });
       });
