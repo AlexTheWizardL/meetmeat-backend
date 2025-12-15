@@ -5,6 +5,27 @@
  * Swap providers by changing AI_PROVIDER env variable.
  */
 
+export interface VisualStyle {
+  /** Overall design style */
+  style: 'modern' | 'classic' | 'minimal' | 'bold' | 'playful' | 'corporate';
+  /** Typography characteristics */
+  typography: {
+    headingStyle: 'sans-serif' | 'serif' | 'display' | 'monospace';
+    bodyStyle: 'sans-serif' | 'serif';
+    weight: 'light' | 'regular' | 'bold' | 'heavy';
+  };
+  /** Design elements observed */
+  designElements: string[];
+}
+
+export interface BrandColors {
+  primary: string;
+  secondary?: string;
+  accent?: string;
+  background?: string;
+  text?: string;
+}
+
 export interface ParsedEventData {
   name: string;
   description?: string;
@@ -16,12 +37,13 @@ export interface ParsedEventData {
     country?: string;
     isVirtual: boolean;
   };
-  brandColors?: {
-    primary: string;
-    secondary?: string;
-  };
+  brandColors?: BrandColors;
   logoUrl?: string;
   organizerName?: string;
+  /** Visual style extracted from the page */
+  visualStyle?: VisualStyle;
+  /** Background image or hero image URL */
+  heroImageUrl?: string;
 }
 
 export interface GeneratedTemplate {
@@ -43,6 +65,7 @@ export interface TemplateElement {
     fill?: string;
     fontSize?: number;
     fontFamily?: string;
+    fontWeight?: string;
     [key: string]: unknown;
   };
 }

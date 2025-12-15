@@ -4,6 +4,8 @@ import { AI_PROVIDER } from './ai.interface';
 import { OpenAiProvider } from './providers/openai.provider';
 import { AnthropicProvider } from './providers/anthropic.provider';
 import { AiService } from './ai.service';
+import { ScreenshotService } from './services/screenshot.service';
+import { HtmlScraperService } from './services/html-scraper.service';
 
 /**
  * AI Module with swappable providers
@@ -22,24 +24,39 @@ export class AiModule {
       module: AiModule,
       imports: [ConfigModule],
       providers: [
+        // Utility services for screenshot capture and HTML scraping
+        ScreenshotService,
+        HtmlScraperService,
         {
           provide: AI_PROVIDER,
-          useFactory: (configService: ConfigService) => {
+          useFactory: (
+            configService: ConfigService,
+            screenshotService: ScreenshotService,
+            htmlScraperService: HtmlScraperService,
+          ) => {
             const provider = configService.get<string>('ai.provider');
 
             switch (provider) {
               case 'anthropic':
-                return new AnthropicProvider(configService);
+                return new AnthropicProvider(
+                  configService,
+                  screenshotService,
+                  htmlScraperService,
+                );
               case 'openai':
               default:
-                return new OpenAiProvider(configService);
+                return new OpenAiProvider(
+                  configService,
+                  screenshotService,
+                  htmlScraperService,
+                );
             }
           },
-          inject: [ConfigService],
+          inject: [ConfigService, ScreenshotService, HtmlScraperService],
         },
         AiService,
       ],
-      exports: [AI_PROVIDER, AiService],
+      exports: [AI_PROVIDER, AiService, ScreenshotService, HtmlScraperService],
     };
   }
 }
