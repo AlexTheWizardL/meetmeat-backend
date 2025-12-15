@@ -8,6 +8,13 @@ import type {
 import { eventParsingTemplate, templateGenerationTemplate } from '../templates';
 import { MockDataGenerator } from '../mock';
 import { withRetry } from '../../../common/utils/retry';
+import {
+  AiServiceUnavailableException,
+  AiConfigurationException,
+  AiRateLimitException,
+  EventParsingException,
+  TemplateGenerationException,
+} from '../../../common/exceptions/app.exceptions';
 
 interface AnthropicResponse {
   content: { text: string }[];
@@ -40,10 +47,21 @@ export class AnthropicProvider implements AiProviderInterface {
       return MockDataGenerator.generateEventData(url);
     }
 
-    const prompt = eventParsingTemplate.build({ url });
-    const response = await this.callAnthropic(prompt);
-
-    return eventParsingTemplate.parse(response);
+    try {
+      const prompt = eventParsingTemplate.build({ url });
+      const response = await this.callAnthropic(prompt);
+      return eventParsingTemplate.parse(response);
+    } catch (error) {
+      this.logger.error(`Failed to parse event from URL: ${url}`, error);
+      if (
+        error instanceof AiServiceUnavailableException ||
+        error instanceof AiConfigurationException ||
+        error instanceof AiRateLimitException
+      ) {
+        throw error;
+      }
+      throw new EventParsingException();
+    }
   }
 
   async generateTemplates(
@@ -59,11 +77,25 @@ export class AnthropicProvider implements AiProviderInterface {
       return MockDataGenerator.generateTemplates(eventData, count);
     }
 
-    const prompt = templateGenerationTemplate.build({ eventData, count });
-    const response = await this.callAnthropic(prompt);
-    const result = templateGenerationTemplate.parse(response);
-
-    return result.templates.slice(0, count);
+    try {
+      const prompt = templateGenerationTemplate.build({ eventData, count });
+      const response = await this.callAnthropic(prompt);
+      const result = templateGenerationTemplate.parse(response);
+      return result.templates.slice(0, count);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate templates for event: ${eventData.name}`,
+        error,
+      );
+      if (
+        error instanceof AiServiceUnavailableException ||
+        error instanceof AiConfigurationException ||
+        error instanceof AiRateLimitException
+      ) {
+        throw error;
+      }
+      throw new TemplateGenerationException();
+    }
   }
 
   private async callAnthropic(prompt: string): Promise<string> {
@@ -84,10 +116,21 @@ export class AnthropicProvider implements AiProviderInterface {
         });
 
         if (!response.ok) {
-          const error = await response.text();
-          throw new Error(
-            `Anthropic API error: ${String(response.status)} - ${error}`,
+          const errorText = await response.text();
+          this.logger.error(
+            `Anthropic API error: ${String(response.status)} - ${errorText}`,
           );
+
+          if (response.status === 401) {
+            throw new AiConfigurationException();
+          }
+          if (response.status === 429) {
+            throw new AiRateLimitException();
+          }
+          if (response.status >= 500) {
+            throw new AiServiceUnavailableException(errorText);
+          }
+          throw new AiServiceUnavailableException(errorText);
         }
 
         const data = (await response.json()) as AnthropicResponse;

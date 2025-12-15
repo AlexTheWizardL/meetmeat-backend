@@ -16,7 +16,7 @@ export default registerAs(
         : false,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-    synchronize: false,
+    synchronize: process.env.NODE_ENV === 'development',
     logging: process.env.NODE_ENV === 'development',
   }),
 );

@@ -18,12 +18,21 @@ export class TemplatesService {
     const event = await this.eventsService.findOne(eventId);
 
     // Generate templates using AI
+    // Handle both Date objects and ISO strings for dates
+    const formatDate = (
+      date: Date | string | undefined,
+    ): string | undefined => {
+      if (date === undefined) return undefined;
+      if (date instanceof Date) return date.toISOString().split('T')[0];
+      return date.split('T')[0];
+    };
+
     const generatedTemplates = await this.aiService.generateTemplates(
       {
         name: event.name,
         description: event.description,
-        startDate: event.startDate?.toISOString().split('T')[0],
-        endDate: event.endDate?.toISOString().split('T')[0],
+        startDate: formatDate(event.startDate),
+        endDate: formatDate(event.endDate),
         location: event.location,
         brandColors: event.brandColors,
         logoUrl: event.logoUrl,
