@@ -18,7 +18,14 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  app.enableCors();
+  // Configure CORS with allowed origins from environment
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
+    'http://localhost:8081',
+  ];
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
+    credentials: true,
+  });
 
   // Swagger/OpenAPI documentation
   const config = new DocumentBuilder()

@@ -11,6 +11,7 @@ export interface ScreenshotResult {
 export class ScreenshotService {
   private readonly logger = new Logger(ScreenshotService.name);
   private browser: Browser | null = null;
+  private browserLock: Promise<Browser> | null = null;
 
   /**
    * Capture screenshot and HTML from a URL
@@ -128,29 +129,38 @@ export class ScreenshotService {
     }
   }
 
-  /**
-   * Get or create browser instance
-   */
   private async getBrowser(): Promise<Browser> {
-    if (this.browser?.connected !== true) {
-      const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-      this.browser = await puppeteer.launch({
-        headless: true,
-        executablePath: executablePath !== '' ? executablePath : undefined,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
-      });
+    if (this.browser?.connected === true) {
+      return this.browser;
     }
-    return this.browser;
+
+    if (this.browserLock) {
+      return this.browserLock;
+    }
+
+    this.browserLock = this.createBrowser();
+    try {
+      this.browser = await this.browserLock;
+      return this.browser;
+    } finally {
+      this.browserLock = null;
+    }
   }
 
-  /**
-   * Cleanup browser on module destroy
-   */
+  private async createBrowser(): Promise<Browser> {
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    return puppeteer.launch({
+      headless: true,
+      executablePath: executablePath !== '' ? executablePath : undefined,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+    });
+  }
+
   async onModuleDestroy(): Promise<void> {
     if (this.browser) {
       await this.browser.close();

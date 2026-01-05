@@ -63,6 +63,7 @@ ${this.buildJsonInstructions(schemaExample)}
 
   /**
    * Build prompt for GPT-4 Vision analysis with screenshot
+   * Enhanced to capture full visual language (gradients, shadows, decorative elements)
    */
   buildVisionPrompt(input: EventParsingInput): string {
     const scrapedInfo = input.scrapedData
@@ -78,19 +79,18 @@ Pre-extracted data from HTML:
       : '';
 
     return `
-Analyze this event/conference website screenshot and extract detailed information.
+Analyze this event/conference website screenshot. Your goal is to capture the VISUAL VIBE so we can create posters that feel like they belong to this event.
 
 URL: ${input.url}
 ${scrapedInfo}
 
-IMPORTANT: You must respond with ONLY valid JSON, no other text.
+IMPORTANT: Respond with ONLY valid JSON, no other text.
 
-Extract the following in JSON format:
 {
   "name": "Event name (required)",
   "description": "Brief 1-2 sentence description",
-  "startDate": "YYYY-MM-DD format or null",
-  "endDate": "YYYY-MM-DD format or null",
+  "startDate": "YYYY-MM-DD or null",
+  "endDate": "YYYY-MM-DD or null",
   "location": {
     "venue": "Venue name or null",
     "city": "City name",
@@ -98,38 +98,84 @@ Extract the following in JSON format:
     "isVirtual": true/false
   },
   "brandColors": {
-    "primary": "#HEXCODE - main brand color visible in hero/header",
-    "secondary": "#HEXCODE - secondary accent color or null",
-    "accent": "#HEXCODE - accent/highlight color or null",
-    "background": "#HEXCODE - main background color",
+    "primary": "#HEXCODE - dominant brand color",
+    "secondary": "#HEXCODE - secondary color or null",
+    "accent": "#HEXCODE - accent/CTA color or null",
+    "background": "#HEXCODE - main background",
     "text": "#HEXCODE - main text color"
   },
-  "logoUrl": "Logo URL if found, or null",
-  "organizerName": "Organizer/company name or null",
+  "logoUrl": "Logo URL or null",
+  "organizerName": "Organizer name or null",
   "visualStyle": {
     "style": "modern|classic|minimal|bold|playful|corporate",
     "typography": {
       "headingStyle": "sans-serif|serif|display|monospace",
       "bodyStyle": "sans-serif|serif",
-      "weight": "light|regular|bold|heavy"
+      "weight": "light|regular|bold|heavy",
+      "letterSpacing": "tight|normal|wide"
     },
-    "designElements": ["list", "of", "observed", "elements"]
+    "gradient": {
+      "type": "linear|radial",
+      "angle": 135,
+      "colors": ["#start", "#end"],
+      "positions": [0, 1]
+    },
+    "shadow": {
+      "type": "soft|hard|glow|none",
+      "color": "#000000",
+      "blur": 20,
+      "offsetX": 0,
+      "offsetY": 10
+    },
+    "decorativeElements": [
+      {
+        "type": "line|circle|rectangle|blob|dots|grid",
+        "position": "top-left|top-right|bottom-left|bottom-right|background|border",
+        "color": "#HEXCODE",
+        "opacity": 0.5,
+        "size": 30
+      }
+    ],
+    "designElements": ["gradient", "rounded-corners", "cards", etc.]
   },
-  "heroImageUrl": "Hero/banner image URL if prominently displayed"
+  "heroImageUrl": "Hero image URL or null"
 }
 
-Guidelines for visual analysis:
-- BRAND COLORS: Look at the header, buttons, and hero section - those show true brand colors
-- VISUAL STYLE:
-  * "modern" = clean lines, gradient, sans-serif, lots of whitespace
-  * "classic" = traditional, serif fonts, structured layout
-  * "minimal" = very simple, few colors, lots of white space
-  * "bold" = strong colors, large typography, high contrast
-  * "playful" = rounded shapes, bright colors, fun elements
-  * "corporate" = professional, muted colors, formal
-- DESIGN ELEMENTS: Note things like "gradient", "rounded-corners", "cards", "hero-image", "parallax", "icons", "illustrations"
-- For dates, look for text like "September 15-17, 2024" and convert to YYYY-MM-DD
-- For location, look for city names, venue names, or "Virtual" indicators
+=== VISUAL ANALYSIS GUIDE ===
+
+1. GRADIENTS (Critical for capturing vibe):
+   - Look at hero sections, buttons, overlays
+   - "linear" = color transitions in one direction (specify angle: 0=top-down, 90=left-right, 135=diagonal)
+   - "radial" = color radiates from center
+   - Capture the exact colors in the gradient (usually 2-3 colors)
+   - If NO gradient visible, set gradient to null
+
+2. SHADOWS (Creates depth and style):
+   - "soft" = blurry, subtle shadow (modern look)
+   - "hard" = crisp, defined shadow (bold look)
+   - "glow" = colored glow around elements (playful/tech look)
+   - "none" = flat design, no shadows
+   - Look at cards, buttons, images for shadow style
+
+3. DECORATIVE ELEMENTS (Creates uniqueness):
+   - Look for geometric shapes (circles, lines, blobs)
+   - Note their position (corner decorations, background patterns)
+   - Capture their color and transparency
+   - Examples: floating circles, diagonal lines, dot patterns, grid backgrounds
+
+4. TYPOGRAPHY:
+   - "display" = decorative/unique headline fonts
+   - "heavy" = extra bold, impactful
+   - "tight" letterSpacing = modern tech feel
+   - "wide" letterSpacing = elegant, spaced out
+
+5. OVERALL STYLE:
+   - "modern" = gradients, soft shadows, sans-serif, whitespace
+   - "bold" = high contrast, strong colors, hard shadows
+   - "playful" = rounded shapes, bright colors, glows
+   - "minimal" = few colors, no decorations, lots of space
+   - "corporate" = muted colors, structured, professional
+   - "classic" = serif fonts, traditional layout
     `.trim();
   }
 
@@ -188,6 +234,65 @@ Guidelines for visual analysis:
                 weight: {
                   type: 'string',
                   enum: ['light', 'regular', 'bold', 'heavy'],
+                },
+                letterSpacing: {
+                  type: 'string',
+                  enum: ['tight', 'normal', 'wide'],
+                },
+              },
+            },
+            gradient: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', enum: ['linear', 'radial'] },
+                angle: { type: 'number', minimum: 0, maximum: 360 },
+                colors: { type: 'array', items: { type: 'string' } },
+                positions: { type: 'array', items: { type: 'number' } },
+              },
+            },
+            shadow: {
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  enum: ['soft', 'hard', 'glow', 'none'],
+                },
+                color: { type: 'string' },
+                blur: { type: 'number' },
+                offsetX: { type: 'number' },
+                offsetY: { type: 'number' },
+              },
+            },
+            decorativeElements: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: [
+                      'line',
+                      'circle',
+                      'rectangle',
+                      'blob',
+                      'dots',
+                      'grid',
+                    ],
+                  },
+                  position: {
+                    type: 'string',
+                    enum: [
+                      'top-left',
+                      'top-right',
+                      'bottom-left',
+                      'bottom-right',
+                      'background',
+                      'border',
+                    ],
+                  },
+                  color: { type: 'string' },
+                  opacity: { type: 'number', minimum: 0, maximum: 1 },
+                  size: { type: 'number' },
                 },
               },
             },

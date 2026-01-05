@@ -33,4 +33,14 @@ export class AiService {
   ): Promise<GeneratedTemplate[]> {
     return this.aiProvider.generateTemplates(eventData, count);
   }
+
+  /**
+   * Generate a background image for a poster using AI image generation
+   */
+  async generateBackgroundImage(
+    eventData: ParsedEventData,
+    style: 'modern' | 'minimal' | 'bold',
+  ): Promise<string> {
+    return this.aiProvider.generateBackgroundImage(eventData, style);
+  }
 }

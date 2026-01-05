@@ -65,14 +65,18 @@ export class ProfilesService {
   async setDefault(id: string): Promise<Profile> {
     const profile = await this.findOne(id);
 
-    // Remove default from all other profiles
-    await this.profileRepository.update(
-      { isDefault: true, deletedAt: IsNull() },
-      { isDefault: false },
-    );
+    // Use transaction to prevent race condition
+    return this.profileRepository.manager.transaction(async (manager) => {
+      // Remove default from all other profiles
+      await manager.update(
+        Profile,
+        { isDefault: true, deletedAt: IsNull() },
+        { isDefault: false },
+      );
 
-    // Set this profile as default
-    profile.isDefault = true;
-    return this.profileRepository.save(profile);
+      // Set this profile as default
+      profile.isDefault = true;
+      return manager.save(profile);
+    });
   }
 }

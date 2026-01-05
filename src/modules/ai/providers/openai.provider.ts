@@ -23,6 +23,10 @@ interface OpenAiResponse {
   choices: { message: { content: string } }[];
 }
 
+interface DalleResponse {
+  data: { url?: string; b64_json?: string; revised_prompt?: string }[];
+}
+
 interface OpenAiMessage {
   role: 'user' | 'system' | 'assistant';
   content: string | OpenAiContentPart[];
@@ -193,6 +197,197 @@ export class OpenAiProvider implements AiProviderInterface {
       }
       throw new TemplateGenerationException();
     }
+  }
+
+  async generateBackgroundImage(
+    eventData: ParsedEventData,
+    style: 'modern' | 'minimal' | 'bold',
+  ): Promise<string> {
+    this.logger.log(
+      `Generating ${style} background image for event: ${eventData.name}`,
+    );
+
+    if (this.apiKey === '') {
+      this.logger.warn('OpenAI API key not configured, returning placeholder');
+      // Return a placeholder gradient image URL
+      return `https://placehold.co/1080x1350/${(eventData.brandColors?.primary ?? '#6C5CE7').replace('#', '')}/${(eventData.brandColors?.secondary ?? '#A29BFE').replace('#', '')}?text=`;
+    }
+
+    const prompt = this.buildBackgroundPrompt(eventData, style);
+
+    try {
+      const imageUrl = await this.callDalle(prompt);
+      return imageUrl;
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate background for event: ${eventData.name}`,
+        error,
+      );
+      // Return fallback placeholder on error
+      return `https://placehold.co/1080x1350/${(eventData.brandColors?.primary ?? '#6C5CE7').replace('#', '')}/${(eventData.brandColors?.secondary ?? '#A29BFE').replace('#', '')}?text=`;
+    }
+  }
+
+  /**
+   * Build DALL-E prompt for background image generation
+   */
+  private buildBackgroundPrompt(
+    eventData: ParsedEventData,
+    style: 'modern' | 'minimal' | 'bold',
+  ): string {
+    const primaryColor = eventData.brandColors?.primary ?? '#6C5CE7';
+    const secondaryColor = eventData.brandColors?.secondary ?? primaryColor;
+    const eventName = eventData.name;
+    const eventDescription = eventData.description ?? '';
+
+    // Determine event type/theme from name and description
+    const eventContext = `${eventName} ${eventDescription}`.toLowerCase();
+    let themeHint = 'professional technology conference';
+
+    if (
+      eventContext.includes('ai') ||
+      eventContext.includes('artificial intelligence') ||
+      eventContext.includes('machine learning')
+    ) {
+      themeHint =
+        'AI and machine learning technology, neural networks, data flows';
+    } else if (
+      eventContext.includes('web') ||
+      eventContext.includes('frontend') ||
+      eventContext.includes('javascript')
+    ) {
+      themeHint = 'web development, digital interfaces, code aesthetics';
+    } else if (
+      eventContext.includes('startup') ||
+      eventContext.includes('entrepreneur')
+    ) {
+      themeHint = 'innovation, growth, entrepreneurship, dynamic energy';
+    } else if (
+      eventContext.includes('design') ||
+      eventContext.includes('ux') ||
+      eventContext.includes('ui')
+    ) {
+      themeHint = 'design thinking, creative flow, user experience';
+    } else if (
+      eventContext.includes('devops') ||
+      eventContext.includes('cloud') ||
+      eventContext.includes('infrastructure')
+    ) {
+      themeHint = 'cloud computing, infrastructure, connected systems';
+    } else if (
+      eventContext.includes('data') ||
+      eventContext.includes('analytics')
+    ) {
+      themeHint = 'data visualization, analytics, information flow';
+    } else if (
+      eventContext.includes('security') ||
+      eventContext.includes('cyber')
+    ) {
+      themeHint = 'cybersecurity, digital protection, encrypted networks';
+    } else if (
+      eventContext.includes('mobile') ||
+      eventContext.includes('app')
+    ) {
+      themeHint = 'mobile technology, app interfaces, connected devices';
+    } else if (
+      eventContext.includes('game') ||
+      eventContext.includes('gaming')
+    ) {
+      themeHint = 'gaming, interactive entertainment, digital worlds';
+    }
+
+    // Build style description
+    let styleDesc = '';
+    switch (style) {
+      case 'modern':
+        styleDesc =
+          'modern and sleek with smooth gradients, soft glows, and flowing organic shapes';
+        break;
+      case 'minimal':
+        styleDesc =
+          'minimal and clean with subtle textures, fine lines, and elegant simplicity';
+        break;
+      case 'bold':
+        styleDesc =
+          'bold and vibrant with high contrast, strong geometric shapes, and dynamic energy';
+        break;
+    }
+
+    return `Create a full-bleed abstract background for "${eventName}" event poster.
+
+EVENT THEME: ${themeHint}
+
+COLOR PALETTE (MUST USE):
+- PRIMARY: ${primaryColor} (dominant, 60-70%)
+- SECONDARY: ${secondaryColor} (accent, 20-30%)
+
+VISUAL STYLE: ${styleDesc}
+
+REQUIREMENTS:
+- Abstract design inspired by the event theme - evoke the spirit of ${themeHint}
+- FULL BLEED: extends to ALL edges, NO borders, NO frames, NO margins
+- NO text, NO logos, NO people, NO faces
+- Vertical/portrait orientation
+- Slightly lighter/softer area in center-bottom for text overlay
+- Professional, high-end conference aesthetic
+- Seamless edge-to-edge design`;
+  }
+
+  /**
+   * Call DALL-E 3 API
+   * Returns base64 data URL to avoid CORS issues with Azure blob URLs
+   */
+  private async callDalle(prompt: string): Promise<string> {
+    return withRetry(
+      async () => {
+        const response = await fetch(
+          'https://api.openai.com/v1/images/generations',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'dall-e-3',
+              prompt,
+              n: 1,
+              size: '1024x1792', // Portrait format for poster
+              quality: 'standard',
+              response_format: 'b64_json', // Return base64 to avoid CORS issues
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          this.logger.error(
+            `DALL-E API error: ${String(response.status)} - ${errorText}`,
+          );
+
+          if (response.status === 401) {
+            throw new AiConfigurationException();
+          }
+          if (response.status === 429) {
+            throw new AiRateLimitException();
+          }
+          throw new AiServiceUnavailableException(errorText);
+        }
+
+        const data = (await response.json()) as DalleResponse;
+        this.logger.log(`DALL-E generated image successfully`);
+
+        // Return as data URL for direct use in frontend
+        const b64 = data.data[0].b64_json ?? '';
+        return `data:image/png;base64,${b64}`;
+      },
+      {
+        maxRetries: 2,
+        initialDelayMs: 2000,
+        logger: this.logger,
+        context: 'DALL-E API',
+      },
+    );
   }
 
   /**

@@ -33,7 +33,13 @@ export class LocalStorageProvider implements StorageProviderInterface {
     const extension = this.getExtension(options.mimeType ?? '');
     const filename = options.filename ?? `${uuid()}${extension}`;
     const key = folder !== '' ? `${folder}/${filename}` : filename;
-    const fullPath = path.join(this.basePath, key);
+    const fullPath = path.resolve(this.basePath, key);
+
+    // Security: Prevent path traversal attacks
+    const resolvedBase = path.resolve(this.basePath);
+    if (!fullPath.startsWith(resolvedBase + path.sep)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
 
     // Ensure folder exists
     const folderPath = path.dirname(fullPath);
@@ -53,17 +59,31 @@ export class LocalStorageProvider implements StorageProviderInterface {
   }
 
   async delete(key: string): Promise<void> {
-    const fullPath = path.join(this.basePath, key);
+    const fullPath = path.resolve(this.basePath, key);
+    const resolvedBase = path.resolve(this.basePath);
+    if (!fullPath.startsWith(resolvedBase + path.sep)) {
+      throw new Error('Invalid path: path traversal detected');
+    }
+
     try {
       await fs.unlink(fullPath);
       this.logger.log(`File deleted: ${key}`);
-    } catch {
-      this.logger.warn(`File not found for deletion: ${key}`);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        this.logger.warn(`File not found for deletion: ${key}`);
+      } else {
+        throw error;
+      }
     }
   }
 
   async exists(key: string): Promise<boolean> {
-    const fullPath = path.join(this.basePath, key);
+    const fullPath = path.resolve(this.basePath, key);
+    const resolvedBase = path.resolve(this.basePath);
+    if (!fullPath.startsWith(resolvedBase + path.sep)) {
+      return false;
+    }
+
     try {
       await fs.access(fullPath);
       return true;

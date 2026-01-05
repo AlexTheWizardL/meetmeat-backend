@@ -86,4 +86,30 @@ export class TemplatesService {
   async incrementUsage(id: string): Promise<void> {
     await this.templateRepository.increment({ id }, 'usageCount', 1);
   }
+
+  /**
+   * Generate background images for templates using DALL-E
+   * Returns an array of image URLs for each style
+   */
+  async generateBackgrounds(
+    eventId: string,
+  ): Promise<{ modern: string; minimal: string; bold: string }> {
+    const event = await this.eventsService.findOne(eventId);
+
+    // Build event data for background generation with full context
+    const eventData = {
+      name: event.name,
+      description: event.description,
+      brandColors: event.brandColors,
+    };
+
+    // Generate backgrounds in parallel for each style
+    const [modern, minimal, bold] = await Promise.all([
+      this.aiService.generateBackgroundImage(eventData, 'modern'),
+      this.aiService.generateBackgroundImage(eventData, 'minimal'),
+      this.aiService.generateBackgroundImage(eventData, 'bold'),
+    ]);
+
+    return { modern, minimal, bold };
+  }
 }

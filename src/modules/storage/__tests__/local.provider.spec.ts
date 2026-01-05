@@ -165,10 +165,23 @@ describe('LocalStorageProvider', () => {
     });
 
     it('should handle non-existent file gracefully', async () => {
-      mockFs.unlink.mockRejectedValue(new Error('ENOENT'));
+      const enoentError = Object.assign(new Error('ENOENT'), {
+        code: 'ENOENT',
+      });
+      mockFs.unlink.mockRejectedValue(enoentError);
 
-      // Should not throw
       await expect(provider.delete('non-existent.png')).resolves.not.toThrow();
+    });
+
+    it('should throw on other errors', async () => {
+      const permissionError = Object.assign(new Error('Permission denied'), {
+        code: 'EACCES',
+      });
+      mockFs.unlink.mockRejectedValue(permissionError);
+
+      await expect(provider.delete('protected-file.png')).rejects.toThrow(
+        'Permission denied',
+      );
     });
   });
 

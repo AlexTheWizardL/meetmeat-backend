@@ -16,6 +16,10 @@ import {
 } from '@nestjs/swagger';
 import { TemplatesService } from './templates.service';
 import { GenerateTemplatesDto } from './dto/generate-templates.dto';
+import {
+  GenerateBackgroundsDto,
+  GenerateBackgroundsResponseDto,
+} from './dto/generate-backgrounds.dto';
 import { Template } from './entities/template.entity';
 
 @ApiTags('templates')
@@ -37,6 +41,24 @@ export class TemplatesController {
   @ApiResponse({ status: 404, description: 'Event not found' })
   generate(@Body() dto: GenerateTemplatesDto): Promise<Template[]> {
     return this.templatesService.generateForEvent(dto.eventId, dto.count);
+  }
+
+  @Post('generate-backgrounds')
+  @ApiOperation({
+    summary: 'Generate AI background images for templates',
+    description:
+      'Uses DALL-E to generate beautiful abstract background images matching the event brand colors and style.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Background images generated successfully',
+    type: GenerateBackgroundsResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Event not found' })
+  generateBackgrounds(
+    @Body() dto: GenerateBackgroundsDto,
+  ): Promise<GenerateBackgroundsResponseDto> {
+    return this.templatesService.generateBackgrounds(dto.eventId);
   }
 
   @Get()

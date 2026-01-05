@@ -28,6 +28,11 @@ describe('ProfilesService', () => {
     version: 1,
   };
 
+  const mockManager = {
+    update: jest.fn(),
+    save: jest.fn(),
+  };
+
   const mockRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -35,6 +40,12 @@ describe('ProfilesService', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     softRemove: jest.fn(),
+    manager: {
+      transaction: jest.fn(
+        (cb: (manager: typeof mockManager) => Promise<Profile>) =>
+          cb(mockManager),
+      ),
+    },
   };
 
   beforeEach(async () => {
@@ -260,13 +271,13 @@ describe('ProfilesService', () => {
       const defaultedProfile = { ...profileToSetDefault, isDefault: true };
 
       mockRepository.findOne.mockResolvedValue(profileToSetDefault);
-      mockRepository.update.mockResolvedValue({ affected: 1 } as never);
-      mockRepository.save.mockResolvedValue(defaultedProfile);
+      mockManager.update.mockResolvedValue({ affected: 1 } as never);
+      mockManager.save.mockResolvedValue(defaultedProfile);
 
       const result = await service.setDefault(mockProfile.id);
 
-      // Should unset all other defaults first
-      expect(mockRepository.update).toHaveBeenCalledWith(
+      expect(mockManager.update).toHaveBeenCalledWith(
+        Profile,
         { isDefault: true, deletedAt: IsNull() },
         { isDefault: false },
       );
@@ -285,8 +296,8 @@ describe('ProfilesService', () => {
       const alreadyDefault = { ...mockProfile, isDefault: true };
 
       mockRepository.findOne.mockResolvedValue(alreadyDefault);
-      mockRepository.update.mockResolvedValue({ affected: 1 } as never);
-      mockRepository.save.mockResolvedValue(alreadyDefault);
+      mockManager.update.mockResolvedValue({ affected: 1 } as never);
+      mockManager.save.mockResolvedValue(alreadyDefault);
 
       const result = await service.setDefault(mockProfile.id);
 

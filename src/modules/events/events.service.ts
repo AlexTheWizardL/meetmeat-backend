@@ -1,8 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Event } from './entities/event.entity';
 import { AiService } from '../ai/ai.service';
+
+// Internal IP ranges to block (SSRF protection)
+const BLOCKED_IP_PATTERNS = [
+  /^127\./, // Localhost
+  /^10\./, // Private Class A
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // Private Class B
+  /^192\.168\./, // Private Class C
+  /^169\.254\./, // Link-local
+  /^0\./, // Current network
+  /^localhost$/i,
+  /^.*\.local$/i,
+];
 
 @Injectable()
 export class EventsService {
@@ -12,7 +28,34 @@ export class EventsService {
     private readonly aiService: AiService,
   ) {}
 
+  private validateUrl(url: string): void {
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      throw new BadRequestException('Invalid URL format');
+    }
+
+    // Only allow http and https
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new BadRequestException('Only HTTP and HTTPS URLs are allowed');
+    }
+
+    // Block internal IPs and hostnames
+    const hostname = parsedUrl.hostname;
+    for (const pattern of BLOCKED_IP_PATTERNS) {
+      if (pattern.test(hostname)) {
+        throw new BadRequestException(
+          'URLs pointing to internal resources are not allowed',
+        );
+      }
+    }
+  }
+
   async parseFromUrl(url: string): Promise<Event> {
+    // Validate URL to prevent SSRF attacks
+    this.validateUrl(url);
+
     // Check if we already have this event cached
     const existing = await this.eventRepository.findOne({
       where: { sourceUrl: url, deletedAt: IsNull() },

@@ -1,18 +1,58 @@
 import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
+/** Gradient definition for backgrounds or elements */
+export interface GradientStyle {
+  type: 'linear' | 'radial';
+  angle?: number;
+  colors: string[];
+  positions?: number[];
+}
+
+/** Shadow definition */
+export interface ShadowStyle {
+  type: 'soft' | 'hard' | 'glow' | 'none';
+  color: string;
+  blur: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 export interface TemplateElement {
   id: string;
-  type: 'text' | 'image' | 'shape' | 'logo';
+  type: 'text' | 'image' | 'shape' | 'logo' | 'gradient-bg' | 'decorative';
+  /** Layer order (higher = on top) */
+  zIndex?: number;
   properties: {
     x: number;
     y: number;
     width: number;
     height: number;
+    // Text
     content?: string;
     fill?: string;
     fontSize?: number;
     fontFamily?: string;
+    fontWeight?: string;
+    letterSpacing?: number;
+    textAlign?: 'left' | 'center' | 'right';
+    // Gradient & Shadow
+    gradient?: GradientStyle;
+    shadow?: ShadowStyle;
+    // Shape
+    shapeType?:
+      | 'line'
+      | 'circle'
+      | 'rectangle'
+      | 'rounded-rect'
+      | 'blob'
+      | 'dots';
+    borderRadius?: number;
+    strokeColor?: string;
+    strokeWidth?: number;
+    // General
+    opacity?: number;
+    rotation?: number;
     [key: string]: unknown;
   };
 }

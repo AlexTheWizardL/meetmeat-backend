@@ -1,4 +1,6 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Logger } from '@nestjs/common';
+
+const logger = new Logger('AppExceptions');
 
 /**
  * Base class for application exceptions with user-friendly messages
@@ -25,7 +27,7 @@ export class AiServiceUnavailableException extends AppException {
     );
     if (details !== undefined && details !== '') {
       // Log details but don't expose to client
-      console.error('AI Service Error:', details);
+      logger.error('AI Service Error:', details);
     }
   }
 }
