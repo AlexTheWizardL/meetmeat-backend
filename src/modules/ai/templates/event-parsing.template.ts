@@ -305,5 +305,4 @@ IMPORTANT: Respond with ONLY valid JSON, no other text.
   }
 }
 
-// Export singleton instance
 export const eventParsingTemplate = new EventParsingTemplate();

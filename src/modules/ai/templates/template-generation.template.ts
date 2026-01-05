@@ -320,5 +320,4 @@ RESPOND WITH ONLY VALID JSON:
   }
 }
 
-// Export singleton instance
 export const templateGenerationTemplate = new TemplateGenerationTemplate();

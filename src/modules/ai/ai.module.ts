@@ -1,6 +1,9 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AI_PROVIDER } from './ai.interface';
+import { OpenAiClient } from './providers/openai-client';
+import { EventParser } from './providers/event-parser';
+import { ImageGenerator } from './providers/image-generator';
 import { OpenAiProvider } from './providers/openai.provider';
 import { AiService } from './ai.service';
 import { ScreenshotService } from './services/screenshot.service';
@@ -17,19 +20,12 @@ export class AiModule {
       providers: [
         ScreenshotService,
         HtmlScraperService,
+        OpenAiClient,
+        EventParser,
+        ImageGenerator,
         {
           provide: AI_PROVIDER,
-          useFactory: (
-            configService: ConfigService,
-            screenshotService: ScreenshotService,
-            htmlScraperService: HtmlScraperService,
-          ) =>
-            new OpenAiProvider(
-              configService,
-              screenshotService,
-              htmlScraperService,
-            ),
-          inject: [ConfigService, ScreenshotService, HtmlScraperService],
+          useClass: OpenAiProvider,
         },
         AiService,
       ],
